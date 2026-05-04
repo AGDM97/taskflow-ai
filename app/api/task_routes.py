@@ -3,9 +3,11 @@ from fastapi import APIRouter, HTTPException, status
 from app.schemas.task_schema import (
     CreateTaskRequest,
     TaskResponse,
+    TaskSummaryResponse,
     UpdateTaskStatusRequest,
 )
 from app.services.task_service import task_service
+from app.services.task_summary_service import task_summary_service
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -47,3 +49,16 @@ def update_task_status(
         )
 
     return task
+
+
+@router.post("/{task_id}/summarize", response_model=TaskSummaryResponse)
+def summarize_task(task_id: str) -> TaskSummaryResponse:
+    task = task_service.get_task_by_id(task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    return task_summary_service.summarize(task)

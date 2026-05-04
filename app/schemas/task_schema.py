@@ -32,3 +32,8 @@ class TaskResponse(BaseModel):
     description: str | None
     status: TaskStatus
     priority: TaskPriority
+
+
+class TaskSummaryResponse(BaseModel):
+    task_id: str
+    summary: str

@@ -142,3 +142,58 @@ def test_should_reject_invalid_status():
     )
 
     assert response.status_code == 422
+
+
+def test_should_summarize_task_with_description():
+    create_response = client.post(
+        "/tasks",
+        json={
+            "title": "Build AI feature",
+            "description": "Create the summarize task endpoint",
+            "priority": "HIGH",
+        },
+    )
+
+    created_task = create_response.json()
+    task_id = created_task["id"]
+
+    response = client.post(f"/tasks/{task_id}/summarize")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["task_id"] == task_id
+    assert "Build AI feature" in data["summary"]
+    assert "Create the summarize task endpoint" in data["summary"]
+    assert "TODO" in data["summary"]
+    assert "HIGH" in data["summary"]
+
+
+def test_should_summarize_task_without_description():
+    create_response = client.post(
+        "/tasks",
+        json={
+            "title": "Review code",
+        },
+    )
+
+    created_task = create_response.json()
+    task_id = created_task["id"]
+
+    response = client.post(f"/tasks/{task_id}/summarize")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["task_id"] == task_id
+    assert "Review code" in data["summary"]
+    assert "No description was provided" in data["summary"]
+
+
+def test_should_return_404_when_summarizing_non_existing_task():
+    response = client.post("/tasks/non-existing-id/summarize")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task not found"
