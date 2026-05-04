@@ -1,18 +1,14 @@
 from app.schemas.task_schema import TaskResponse, TaskSummaryResponse
+from app.services.ollama_client import ollama_client
 
 
 class TaskSummaryService:
     def summarize(self, task: TaskResponse) -> TaskSummaryResponse:
-        description_text = (
-            f" Description: {task.description}"
-            if task.description
-            else " No description was provided."
-        )
-
-        summary = (
-            f"Task '{task.title}' is currently {task.status.value}. "
-            f"Priority is {task.priority.value}."
-            f"{description_text}"
+        summary = ollama_client.generate_task_summary(
+            title=task.title,
+            description=task.description,
+            status=task.status.value,
+            priority=task.priority.value,
         )
 
         return TaskSummaryResponse(

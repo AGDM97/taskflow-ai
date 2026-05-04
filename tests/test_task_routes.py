@@ -144,7 +144,18 @@ def test_should_reject_invalid_status():
     assert response.status_code == 422
 
 
-def test_should_summarize_task_with_description():
+def test_should_summarize_task_with_description(monkeypatch):
+    def fake_generate_task_summary(title, description, status, priority):
+        return (
+            f"Summary generated for title={title}, "
+            f"description={description}, status={status}, priority={priority}"
+        )
+
+    monkeypatch.setattr(
+        "app.services.task_summary_service.ollama_client.generate_task_summary",
+        fake_generate_task_summary,
+    )
+
     create_response = client.post(
         "/tasks",
         json={
@@ -170,7 +181,18 @@ def test_should_summarize_task_with_description():
     assert "HIGH" in data["summary"]
 
 
-def test_should_summarize_task_without_description():
+def test_should_summarize_task_without_description(monkeypatch):
+    def fake_generate_task_summary(title, description, status, priority):
+        return (
+            f"Summary generated for title={title}, "
+            f"description={description}, status={status}, priority={priority}"
+        )
+
+    monkeypatch.setattr(
+        "app.services.task_summary_service.ollama_client.generate_task_summary",
+        fake_generate_task_summary,
+    )
+
     create_response = client.post(
         "/tasks",
         json={
@@ -189,7 +211,9 @@ def test_should_summarize_task_without_description():
 
     assert data["task_id"] == task_id
     assert "Review code" in data["summary"]
-    assert "No description was provided" in data["summary"]
+    assert "None" in data["summary"]
+    assert "TODO" in data["summary"]
+    assert "MEDIUM" in data["summary"]
 
 
 def test_should_return_404_when_summarizing_non_existing_task():
