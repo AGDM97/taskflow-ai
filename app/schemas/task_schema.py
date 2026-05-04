@@ -22,6 +22,10 @@ class CreateTaskRequest(BaseModel):
     priority: TaskPriority = TaskPriority.MEDIUM
 
 
+class UpdateTaskStatusRequest(BaseModel):
+    status: TaskStatus
+
+
 class TaskResponse(BaseModel):
     id: str
     title: str
