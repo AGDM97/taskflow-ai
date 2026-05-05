@@ -152,7 +152,7 @@ def test_should_summarize_task_with_description(monkeypatch):
         )
 
     monkeypatch.setattr(
-        "app.services.task_summary_service.ollama_client.generate_task_summary",
+        "app.services.task_summary_service.llm_client.generate_task_summary",
         fake_generate_task_summary,
     )
 
@@ -189,7 +189,7 @@ def test_should_summarize_task_without_description(monkeypatch):
         )
 
     monkeypatch.setattr(
-        "app.services.task_summary_service.ollama_client.generate_task_summary",
+        "app.services.task_summary_service.llm_client.generate_task_summary",
         fake_generate_task_summary,
     )
 
