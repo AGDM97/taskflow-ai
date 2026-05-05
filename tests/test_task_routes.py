@@ -145,16 +145,26 @@ def test_should_reject_invalid_status():
 
 
 def test_should_summarize_task_with_description(monkeypatch):
-    def fake_generate_task_summary(title, description, status, priority):
-        return (
-            f"Summary generated for title={title}, "
-            f"description={description}, status={status}, priority={priority}"
-        )
-
-    monkeypatch.setattr(
-        "app.services.task_summary_service.llm_client.generate_task_summary",
-        fake_generate_task_summary,
-    )
+   def fake_generate_task_breakdown(title, description, status, priority):
+    return 
+    [
+        {
+            "title": "Define API contract",
+            "description": "Create the endpoint contract for task breakdown.",
+            "priority": "HIGH"
+        },
+        {
+            "title": "Implement service",
+            "description": "Create the service that calls the LLM client.",
+            "priority": "HIGH"
+        },
+        {
+            "title": "Add tests",
+            "description": "Validate successful and error scenarios.",
+            "priority": "MEDIUM"
+        }
+    ]
+    
 
     create_response = client.post(
         "/tasks",
@@ -221,3 +231,82 @@ def test_should_return_404_when_summarizing_non_existing_task():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
+
+
+def test_should_break_task_into_subtasks(monkeypatch):
+    def fake_generate_task_breakdown(title, description, status, priority):
+        return [
+            {
+                "title": "Define API contract",
+                "description": "Create the endpoint contract for task breakdown.",
+                "priority": "HIGH",
+            },
+            {
+                "title": "Implement service",
+                "description": "Create the service that calls the LLM client.",
+                "priority": "HIGH",
+            },
+            {
+                "title": "Add tests",
+                "description": "Validate successful and error scenarios.",
+                "priority": "MEDIUM",
+            },
+        ]
+
+    monkeypatch.setattr(
+        "app.services.task_breakdown_service.llm_client.generate_task_breakdown",
+        fake_generate_task_breakdown,
+    )
+
+    create_response = client.post(
+        "/tasks",
+        json={
+            "title": "Build breakdown feature",
+            "description": "Use LLM to generate subtasks",
+            "priority": "HIGH",
+        },
+    )
+
+    task_id = create_response.json()["id"]
+
+    response = client.post(f"/tasks/{task_id}/breakdown")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["task_id"] == task_id
+    assert len(data["subtasks"]) == 3
+    assert data["subtasks"][0]["title"] == "Define API contract"
+    assert data["subtasks"][0]["priority"] == "HIGH"
+
+
+def test_should_return_404_when_breaking_down_non_existing_task():
+    response = client.post("/tasks/non-existing-id/breakdown")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task not found"
+
+
+def test_should_return_502_when_llm_breakdown_output_is_invalid(monkeypatch):
+    def fake_generate_invalid_task_breakdown(title, description, status, priority):return "This is not valid JSON"
+
+    monkeypatch.setattr(
+        "app.services.task_breakdown_service.llm_client.generate_task_breakdown",
+        fake_generate_invalid_task_breakdown,
+    )
+
+    create_response = client.post(
+        "/tasks",
+        json={
+            "title": "Build invalid output test",
+            "description": "Validate bad LLM response",
+        },
+    )
+
+    task_id = create_response.json()["id"]
+
+    response = client.post(f"/tasks/{task_id}/breakdown")
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Invalid LLM output"

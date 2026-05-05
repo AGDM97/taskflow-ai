@@ -2,9 +2,14 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.task_schema import (
     CreateTaskRequest,
+    TaskBreakdownResponse,
     TaskResponse,
     TaskSummaryResponse,
     UpdateTaskStatusRequest,
+)
+from app.services.task_breakdown_service import (
+    InvalidLLMOutputError,
+    task_breakdown_service,
 )
 from app.services.task_service import task_service
 from app.services.task_summary_service import task_summary_service
@@ -62,3 +67,22 @@ def summarize_task(task_id: str) -> TaskSummaryResponse:
         )
 
     return task_summary_service.summarize(task)
+
+
+@router.post("/{task_id}/breakdown", response_model=TaskBreakdownResponse)
+def break_task_into_subtasks(task_id: str) -> TaskBreakdownResponse:
+    task = task_service.get_task_by_id(task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found",
+        )
+
+    try:
+        return task_breakdown_service.breakdown(task)
+    except InvalidLLMOutputError as error:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Invalid LLM output",
+        ) from error

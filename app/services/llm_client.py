@@ -14,6 +14,16 @@ class LLMClient(ABC):
     ) -> str:
         pass
 
+    @abstractmethod
+    def generate_task_breakdown(
+        self,
+        title: str,
+        description: str | None,
+        status: str,
+        priority: str,
+    ) -> str:
+        pass
+
 
 class OllamaLLMClient(LLMClient):
     def generate_task_summary(
@@ -24,6 +34,20 @@ class OllamaLLMClient(LLMClient):
         priority: str,
     ) -> str:
         return ollama_client.generate_task_summary(
+            title=title,
+            description=description,
+            status=status,
+            priority=priority,
+        )
+
+    def generate_task_breakdown(
+        self,
+        title: str,
+        description: str | None,
+        status: str,
+        priority: str,
+    ) -> str:
+        return ollama_client.generate_task_breakdown(
             title=title,
             description=description,
             status=status,

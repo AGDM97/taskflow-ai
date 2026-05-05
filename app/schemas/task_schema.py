@@ -37,3 +37,14 @@ class TaskResponse(BaseModel):
 class TaskSummaryResponse(BaseModel):
     task_id: str
     summary: str
+
+
+class SuggestedSubtask(BaseModel):
+    title: str = Field(..., min_length=3)
+    description: str = Field(..., min_length=3)
+    priority: TaskPriority
+
+
+class TaskBreakdownResponse(BaseModel):
+    task_id: str
+    subtasks: list[SuggestedSubtask] = Field(..., min_length=3, max_length=7)
